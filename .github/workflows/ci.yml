@@ -1,0 +1,30 @@
+name: CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+      - name: Run tests
+        run: |
+          pytest -q
+      - name: Run lightweight PoC (verify end-to-end)
+        run: |
+          python scripts/poc_run.py --csv data/sample_ohlc.csv --out out/ci_poc_results.json --fee 0.0005 --slippage 0.0 --delay-ms 0
+      - name: Run pairs PoC quick-check
+        run: |
+          python scripts/pairs_poc.py --csv data/sample_pair.csv --out out/ci_pairs_poc.json --entry-z 2.0 --exit-z 0.2
