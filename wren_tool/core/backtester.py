@@ -1,8 +1,8 @@
-"""增強版PoC 腳本：
-1) 讀取 CSV 格式的 OHLCV 測試數據
-2) 執行多種交易策略（SMA交叉、統計套利等）
-3) 模擬真實交易環境（滑點、延遲、手續費）並輸出結果報表
 """
+增強版PoC 回測引擎
+提供完整的交易策略回測功能與真實模擬
+"""
+
 from pathlib import Path
 import pandas as pd
 import numpy as np
@@ -32,14 +32,20 @@ except ImportError:
     def get_output_file(filename: str) -> Path:
         return Path("out") / filename
 
+# 導入風險指標計算
+from .risk_metrics import (
+    calculate_max_drawdown,
+    calculate_sharpe_ratio
+)
+
 # 設定日誌
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
 
 # 導入模擬器
 try:
-    from simulation.execution.delay_simulator import DelaySimulator, DelayConfig
-    from simulation.costs.slippage_model import SlippageModel, SlippageModelConfig
+    from wren_tool.simulation.execution.delay_simulator import DelaySimulator, DelayConfig
+    from wren_tool.simulation.costs.slippage_model import SlippageModel, SlippageModelConfig
     DELAY_SIMULATOR_AVAILABLE = True
 except ImportError:
     logger.warning("模擬器模組不可用，使用簡化版本")
@@ -52,7 +58,8 @@ DEFAULT_DELAY_MS = 100  # 默認延遲（毫秒）
 
 
 def load_data(csv_path: str) -> pd.DataFrame:
-    df = pd.read_csv(csv_path, parse_dates=["timestamp"]) 
+    """載入CSV格式的交易數據"""
+    df = pd.read_csv(csv_path, parse_dates=["timestamp"])
     required = ["timestamp", "open", "high", "low", "close", "volume"]
     if not all(col in df.columns for col in required):
         raise ValueError(f"CSV 必須包含欄位: {required}")
@@ -61,6 +68,7 @@ def load_data(csv_path: str) -> pd.DataFrame:
 
 
 def generate_signals(df: pd.DataFrame) -> pd.DataFrame:
+    """生成基本交易信號"""
     df = df.copy()
     df["sma_fast"] = df["close"].rolling(window=3, min_periods=1).mean()
     df["sma_slow"] = df["close"].rolling(window=5, min_periods=1).mean()
@@ -334,158 +342,6 @@ def generate_rsi_signals(df: pd.DataFrame, period: int = 14) -> pd.DataFrame:
     return df
 
 
-def calculate_max_drawdown_from_equity_curve(equity_curve: List[float]) -> float:
-    """
-    基於資金曲線計算最大回撤
-
-    Args:
-        equity_curve: 資金變化曲線
-
-    Returns:
-        最大回撤比例
-    """
-    if not equity_curve or len(equity_curve) < 2:
-        return 0.0
-
-    peak = equity_curve[0]
-    max_drawdown = 0.0
-
-    for equity in equity_curve:
-        if equity > peak:
-            peak = equity
-        drawdown = (peak - equity) / peak if peak > 0 else 0.0
-        max_drawdown = max(max_drawdown, drawdown)
-
-    return max_drawdown
-
-def calculate_equity_curve(df: pd.DataFrame, trades: List[dict], initial_cash: float) -> List[float]:
-    """
-    計算實際資金曲線
-
-    Args:
-        df: 價格數據
-        trades: 交易記錄
-        initial_cash: 初始資金
-
-    Returns:
-        資金變化曲線列表
-    """
-    if not trades:
-        return [initial_cash]
-
-    equity_curve = []
-    cash = initial_cash
-    position = 0.0
-
-    # 按時間排序交易
-    trades_sorted = sorted(trades, key=lambda x: pd.to_datetime(x['time']))
-
-    # 獲取所有唯一時間戳
-    all_timestamps = sorted(df['timestamp'].unique())
-
-    trade_idx = 0
-    current_equity = initial_cash
-
-    for timestamp in all_timestamps:
-        # 應用此時間戳的所有交易
-        while (trade_idx < len(trades_sorted) and
-               pd.to_datetime(trades_sorted[trade_idx]['time']) == timestamp):
-            trade = trades_sorted[trade_idx]
-
-            if trade['side'] == 'buy':
-                # 買入：減少現金，增加倉位
-                cost = (trade['execution_price'] * trade['qty'] +
-                       trade['fee'] + trade['slippage'])
-                if cash >= cost:
-                    cash -= cost
-                    position += trade['qty']
-
-            elif trade['side'] == 'sell':
-                # 賣出：增加現金，減少倉位
-                revenue = (trade['execution_price'] * trade['qty'] - trade['fee'])
-                cash += revenue
-                position -= trade['qty']
-
-            trade_idx += 1
-
-        # 計算當前資金總值
-        current_price = df[df['timestamp'] == timestamp]['close'].iloc[0]
-        current_equity = cash + (position * current_price)
-        equity_curve.append(current_equity)
-
-    return equity_curve
-
-def calculate_max_drawdown(df: pd.DataFrame, trades: List[dict], initial_cash: float) -> float:
-    """
-    計算最大回撤（基於實際交易資金曲線）
-
-    Args:
-        df: 價格數據
-        trades: 交易記錄
-        initial_cash: 初始資金
-
-    Returns:
-        最大回撤比例
-    """
-    if not trades:
-        return 0.0
-
-    equity_curve = calculate_equity_curve(df, trades, initial_cash)
-    return calculate_max_drawdown_from_equity_curve(equity_curve)
-
-def calculate_sharpe_ratio(df: pd.DataFrame, trades: List[dict], initial_cash: float, risk_free_rate: float = 0.02) -> float:
-    """
-    計算夏普比率（基於實際資金回報）
-
-    Args:
-        df: 價格數據
-        trades: 交易記錄
-        initial_cash: 初始資金
-        risk_free_rate: 無風險利率（年化）
-
-    Returns:
-        夏普比率
-    """
-    if not trades or len(df) < 2:
-        return 0.0
-
-    # 計算資金曲線
-    equity_curve = calculate_equity_curve(df, trades, initial_cash)
-
-    if len(equity_curve) < 30:  # 需要足夠的數據點
-        # 回退到簡化版本
-        returns = df["close"].pct_change().dropna()
-        if len(returns) == 0:
-            return 0.0
-        mean_return = returns.mean()
-        std_return = returns.std()
-        if std_return == 0:
-            return 0.0
-        return float((mean_return - risk_free_rate/252) / std_return * np.sqrt(252))
-
-    # 計算資金曲線的日回報率
-    portfolio_values = np.array(equity_curve)
-    daily_returns = np.diff(portfolio_values) / portfolio_values[:-1]
-
-    if len(daily_returns) == 0:
-        return 0.0
-
-    # 計算年化回報率和年化波動率
-    mean_daily_return = np.mean(daily_returns)
-    std_daily_return = np.std(daily_returns)
-
-    if std_daily_return == 0:
-        return 0.0
-
-    # 日無風險利率
-    daily_risk_free_rate = risk_free_rate / 252
-
-    # 年化夏普比率
-    annual_sharpe = (mean_daily_return - daily_risk_free_rate) / std_daily_return * np.sqrt(252)
-
-    return float(annual_sharpe)
-
-
 def simulate_trades(df: pd.DataFrame, initial_cash=10000.0) -> dict:
     """舊版交易模擬函數（為了向下相容）"""
     return simulate_trades_enhanced(df, initial_cash, DEFAULT_FEE, DEFAULT_SLIPPAGE, DEFAULT_DELAY_MS)
@@ -670,46 +526,3 @@ def generate_comparison_report(results: dict) -> str:
     report.append(f"\n最佳策略（按夏普比率）: {best_strategy}")
 
     return "\n".join(report)
-
-
-if __name__ == '__main__':
-    import argparse
-
-    parser = argparse.ArgumentParser(description="增強版PoC回測工具")
-    parser.add_argument("--csv", required=False, default=str(DEFAULT_DATA_PATH) if PATHS_AVAILABLE else "e:/Jerry_python/wren_tool/data/sample_ohlc.csv",
-                       help=f"輸入CSV數據文件路徑 (預設: {'相對路徑' if PATHS_AVAILABLE else '硬編碼路徑'})")
-    parser.add_argument("--out", required=False, default=str(DEFAULT_OUTPUT_PATH) if PATHS_AVAILABLE else "e:/Jerry_python/wren_tool/out/poc_results.json",
-                       help=f"輸出結果文件路徑 (預設: {'相對路徑' if PATHS_AVAILABLE else '硬編碼路徑'})")
-    parser.add_argument("--strategy", required=False, default="sma_crossover",
-                       choices=["sma_crossover", "rsi", "statistical_arbitrage"],
-                       help="交易策略")
-    parser.add_argument("--fee", required=False, type=float, default=None,
-                       help="手續費比例 (默認: 0.0005)")
-    parser.add_argument("--slippage", required=False, type=float, default=None,
-                       help="滑點比例 (默認: 0.001)")
-    parser.add_argument("--delay", required=False, type=int, default=None,
-                       help="延遲毫秒數 (默認: 100)")
-    parser.add_argument("--initial-cash", required=False, type=float, default=10000.0,
-                       help="初始資金 (默認: 10000)")
-    parser.add_argument("--benchmark", required=False, nargs="*", default=None,
-                       help="運行基準測試，比較多個策略")
-    parser.add_argument("--quiet", required=False, action="store_true",
-                       help="靜默模式，不輸出詳細報告")
-
-    args = parser.parse_args()
-
-    if args.benchmark:
-        # 運行基準測試
-        run_benchmark(args.csv, args.benchmark)
-    else:
-        # 運行單次PoC
-        run_poc(
-            csv_path=args.csv,
-            out_path=args.out,
-            strategy=args.strategy,
-            fee=args.fee,
-            slippage=args.slippage,
-            delay_ms=args.delay,
-            initial_cash=args.initial_cash,
-            verbose=not args.quiet
-        )

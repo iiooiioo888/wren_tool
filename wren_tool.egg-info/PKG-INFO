@@ -1,0 +1,303 @@
+Metadata-Version: 2.4
+Name: wren-tool
+Version: 2.0.0
+Summary: 增強版加密貨幣交易策略回測平台
+Home-page: https://github.com/iiooiioo888/wren_tool
+Author: Wren Tool Team
+Author-email: contact@wren-tool.dev
+Project-URL: Bug Reports, https://github.com/iiooiioo888/wren_tool/issues
+Project-URL: Source, https://github.com/iiooiioo888/wren_tool
+Project-URL: Documentation, https://wren-tool.readthedocs.io/
+Keywords: backtesting trading strategy cryptocurrency quantitative finance
+Classifier: Development Status :: 4 - Beta
+Classifier: Intended Audience :: Financial and Insurance Industry
+Classifier: Intended Audience :: Developers
+Classifier: License :: OSI Approved :: MIT License
+Classifier: Operating System :: OS Independent
+Classifier: Programming Language :: Python :: 3
+Classifier: Programming Language :: Python :: 3.8
+Classifier: Programming Language :: Python :: 3.9
+Classifier: Programming Language :: Python :: 3.10
+Classifier: Programming Language :: Python :: 3.11
+Classifier: Programming Language :: Python :: 3.12
+Classifier: Topic :: Scientific/Engineering :: Information Analysis
+Classifier: Topic :: Office/Business :: Financial :: Investment
+Requires-Python: >=3.8
+Description-Content-Type: text/markdown
+Requires-Dist: pandas>=1.3.0
+Requires-Dist: numpy>=1.21.0
+Requires-Dist: pytest>=6.0.0
+Requires-Dist: statsmodels>=0.12.0
+Provides-Extra: dev
+Requires-Dist: pytest>=6.0.0; extra == "dev"
+Requires-Dist: pytest-cov>=2.12.0; extra == "dev"
+Requires-Dist: black>=21.0; extra == "dev"
+Requires-Dist: flake8>=3.9.0; extra == "dev"
+Requires-Dist: mypy>=0.910; extra == "dev"
+Requires-Dist: pre-commit>=2.15.0; extra == "dev"
+Provides-Extra: test
+Requires-Dist: pytest>=6.0.0; extra == "test"
+Requires-Dist: pytest-cov>=2.12.0; extra == "test"
+Requires-Dist: pytest-xdist>=2.2.0; extra == "test"
+Provides-Extra: all
+Requires-Dist: pytest>=6.0.0; extra == "all"
+Requires-Dist: pytest-cov>=2.12.0; extra == "all"
+Requires-Dist: black>=21.0; extra == "all"
+Requires-Dist: flake8>=3.9.0; extra == "all"
+Requires-Dist: mypy>=0.910; extra == "all"
+Requires-Dist: pre-commit>=2.15.0; extra == "all"
+Requires-Dist: pytest>=6.0.0; extra == "all"
+Requires-Dist: pytest-cov>=2.12.0; extra == "all"
+Requires-Dist: pytest-xdist>=2.2.0; extra == "all"
+Dynamic: author
+Dynamic: author-email
+Dynamic: classifier
+Dynamic: description
+Dynamic: description-content-type
+Dynamic: home-page
+Dynamic: keywords
+Dynamic: project-url
+Dynamic: provides-extra
+Dynamic: requires-dist
+Dynamic: requires-python
+Dynamic: summary
+
+# 🚀 Wren Tool - 增強版加密貨幣交易策略回測平台
+
+一個功能完整的加密貨幣交易策略回測平台，支援真實交易環境模擬、多策略比較、風險管理以及完整的測試框架。
+
+## ✨ 主要功能
+
+### 🔧 核心功能
+- **增強版PoC回測引擎**：支援滑點、延遲、手續費等真實交易成本模擬
+- **多策略支援**：SMA交叉、RSI、統計套利等策略
+- **延遲模擬器**：模擬網路延遲、API延遲、交易所撮合延遲
+- **滑點模型**：基於市場影響和訂單規模的滑點計算
+- **風險指標**：夏普比率、最大回撤、勝率等完整風險評估
+- **基準測試**：多策略自動比較和性能評估
+
+### 🧪 測試框架
+- **單元測試**：完整的模組功能測試覆蓋
+- **整合測試**：端到端工作流程驗證
+- **性能測試**：大數據集處理能力測試
+- **自動化測試**：CI/CD支援的自動測試套件
+
+## 📋 專案結構
+
+```
+wren_tool/
+├── data/                          # 數據層
+│   ├── clients/                   # 數據客戶端（CoinGecko, CryptoCompare）
+│   ├── processors/                # 數據處理器
+│   └── storage/                   # 數據存儲管理
+├── scripts/                       # 主要腳本
+│   ├── poc_run.py                 # 增強版PoC回測腳本 ⭐️
+│   ├── load_test.py               # 負載測試腳本
+│   └── pairs_poc.py               # 配對交易PoC
+├── simulation/                    # 模擬引擎
+│   ├── costs/                     # 成本模擬
+│   │   └── slippage_model.py      # 滑點模型
+│   └── execution/                 # 執行模擬
+│       └── delay_simulator.py     # 延遲模擬器
+├── strategies/                    # 交易策略
+│   ├── statistical_arbitrage/     # 統計套利策略
+│   ├── market_making/             # 做市策略
+│   └── arbitrage/                 # 套利策略
+├── tests/                         # 測試套件
+│   ├── unit/                      # 單元測試
+│   └── integration/               # 整合測試
+└── run_tests.py                   # 測試運行器
+```
+
+## 🚀 快速開始
+
+### 1. 環境設置
+
+```powershell
+# 建立虛擬環境
+python -m venv .venv
+.\.venv\Scripts\Activate
+
+# 安裝依賴
+pip install -r requirements.txt
+```
+
+### 2. 執行增強版PoC回測
+
+```powershell
+# 基本回測（使用默認參數）
+python scripts/poc_run.py
+
+# 或指定自定義數據文件
+python scripts/poc_run.py --csv data/sample_ohlc.csv
+
+# 自定義參數回測
+python scripts/poc_run.py ^
+    --csv data/sample_ohlc.csv ^
+    --strategy sma_crossover ^
+    --fee 0.001 ^
+    --slippage 0.002 ^
+    --delay 200 ^
+    --initial-cash 50000
+
+# 比較多種策略
+python scripts/poc_run.py --benchmark sma_crossover rsi --csv data/sample_ohlc.csv
+```
+
+### 3. 執行測試套件
+
+```powershell
+# 運行完整測試套件
+python run_tests.py
+
+# 運行煙霧測試（快速驗證）
+python run_tests.py smoke
+
+# 運行特定測試
+python run_tests.py specific test_enhanced_poc
+```
+
+## 📊 回測結果範例
+
+```
+增強版PoC回測報告
+初始資金: $10000.00
+最終價值: $10383.25
+總盈虧: $383.25
+淨盈虧: $362.77
+收益率: 3.63%
+
+交易成本:
+  手續費: $20.48
+  滑點成本: $0.00
+  延遲成本: $0.00
+
+交易統計:
+  總交易次數: 4
+  勝率: 100.0%
+  最大回撤: 9.43%
+  夏普比率: 1.287
+
+模擬配置:
+  策略: sma_crossover
+  手續費: 0.050%
+  滑點: 0.100%
+  延遲: 100ms
+  模擬器可用: False
+```
+
+## 🔧 進階配置
+
+### 策略參數
+
+```python
+# SMA交叉策略
+--strategy sma_crossover
+
+# RSI策略
+--strategy rsi
+
+# 統計套利策略
+--strategy statistical_arbitrage
+```
+
+### 交易成本參數
+
+```python
+# 手續費比例
+--fee 0.001
+
+# 滑點比例
+--slippage 0.002
+
+# 延遲毫秒數
+--delay 200
+```
+
+### 基準測試
+
+```powershell
+# 比較所有可用策略
+python scripts/poc_run.py --benchmark sma_crossover rsi statistical_arbitrage
+
+# 指定輸出目錄
+python scripts/poc_run.py --benchmark sma_crossover rsi --output-dir results/benchmark
+```
+
+## 🧪 測試覆蓋
+
+### 單元測試
+- ✅ 數據加載功能
+- ✅ 信號生成邏輯
+- ✅ 交易模擬引擎
+- ✅ 風險指標計算
+- ✅ 延遲模擬器
+- ✅ 滑點模型
+
+### 整合測試
+- ✅ 端到端回測流程
+- ✅ 多策略比較
+- ✅ 數據持久化
+- ✅ 錯誤處理
+
+### 性能測試
+- ✅ 大數據集處理
+- ✅ 記憶體使用效率
+- ✅ 執行時間優化
+
+## 📈 開發路線圖
+
+### ✅ 第一階段：回測引擎與數據層開發（已完成）
+- [x] 設計回測引擎的架構與模組化接口
+- [x] 集成歷史數據源（如CoinGecko API）
+- [x] 實現基本的策略回測功能（統計套利、做市策略）
+- [x] 編寫單元測試，確保回測引擎的準確性
+
+### 🚧 第二階段：AI模型與模擬交易環境集成（進行中）
+- [ ] 訓練AI模型，用於信號生成與參數優化
+- [ ] 集成Explainable AI（XAI）工具
+- [ ] 構建模擬交易環境，支持交易成本與滑點模擬
+- [ ] 測試模擬交易環境的準確性與穩定性
+
+### ⏳ 第三階段：風險管理與前端界面開發（規劃中）
+- [ ] 開發壓力測試工具，模擬極端市場情況
+- [ ] 實現實時風險監控與警報功能
+- [ ] 設計並實現前端界面，支持策略設計與回測結果展示
+- [ ] 集成前後端，進行功能測試
+
+## 🤝 貢獻指南
+
+1. Fork 專案
+2. 建立功能分支 (`git checkout -b feature/AmazingFeature`)
+3. 提交變更 (`git commit -m 'Add some AmazingFeature'`)
+4. 推送到分支 (`git push origin feature/AmazingFeature`)
+5. 開啟 Pull Request
+
+## 📝 授權
+
+本專案採用 MIT 授權條款 - 詳見 [LICENSE](LICENSE) 文件
+
+## 🆘 支援
+
+如有問題或建議，請：
+- 開啟 Issue
+- 發送 Pull Request
+- 聯繫維護團隊
+
+## 🔄 版本歷史
+
+### v2.0.0 (最新)
+- ✨ 增強版PoC回測引擎
+- 🔧 完整的交易成本模擬
+- 🧪 全面的測試框架
+- 📊 詳細的風險指標
+- 🚀 基準測試功能
+
+### v1.0.0
+- 🏗️ 基礎PoC腳本
+- 📈 簡單回測功能
+- 🧪 基本測試覆蓋
+
+---
+
+**⭐️ 如果這個專案對您有幫助，請給我們一個 Star！**

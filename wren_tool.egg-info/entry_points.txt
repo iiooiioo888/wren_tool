@@ -1,0 +1,3 @@
+[console_scripts]
+wren-poc = scripts.poc_run:main
+wren-test = run_tests:main
