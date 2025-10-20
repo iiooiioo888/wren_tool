@@ -84,11 +84,11 @@ def run_smoke_tests():
 
     # 運行核心測試
     core_tests = [
-        "test_enhanced_poc.py::TestDataLoading::test_load_valid_csv",
-        "test_enhanced_poc.py::TestSignalGeneration::test_sma_signal_generation",
-        "test_enhanced_poc.py::TestTradingSimulation::test_enhanced_simulation_basic",
-        "test_simulators.py::TestDelaySimulator::test_delay_simulator_initialization",
-        "test_simulators.py::TestSlippageModel::test_slippage_model_initialization",
+        "TestDataLoading::test_load_valid_csv",
+        "TestSignalGeneration::test_sma_signal_generation",
+        "TestTradingSimulation::test_enhanced_simulation_basic",
+        "TestDelaySimulator::test_delay_simulator_initialization",
+        "TestSlippageModel::test_slippage_model_initialization",
     ]
 
     for test in core_tests:

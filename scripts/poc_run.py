@@ -11,6 +11,27 @@ import json
 import logging
 from datetime import datetime, timedelta
 
+# 導入統一路徑配置
+try:
+    from wren_tool.config.paths import (
+        DEFAULT_DATA_PATH,
+        DEFAULT_OUTPUT_PATH,
+        get_data_file,
+        get_output_file
+    )
+    PATHS_AVAILABLE = True
+except ImportError:
+    # 向後相容：如果路徑配置不存在，使用原始的硬編碼路徑
+    DEFAULT_DATA_PATH = Path("e:/Jerry_python/wren_tool/data/sample_ohlc.csv")
+    DEFAULT_OUTPUT_PATH = Path("e:/Jerry_python/wren_tool/out/poc_results.json")
+    PATHS_AVAILABLE = False
+
+    def get_data_file(filename: str) -> Path:
+        return Path("data") / filename
+
+    def get_output_file(filename: str) -> Path:
+        return Path("out") / filename
+
 # 設定日誌
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
@@ -356,6 +377,15 @@ def simulate_trades(df: pd.DataFrame, initial_cash=10000.0) -> dict:
     return simulate_trades_enhanced(df, initial_cash, DEFAULT_FEE, DEFAULT_SLIPPAGE, DEFAULT_DELAY_MS)
 
 
+def run_poc_simple():
+    """簡化版PoC運行函數，用於測試"""
+    return run_poc(
+        csv_path=str(DEFAULT_DATA_PATH),
+        out_path=str(DEFAULT_OUTPUT_PATH),
+        verbose=False
+    )
+
+
 def run_poc(
     csv_path: str,
     out_path: str = None,
@@ -403,7 +433,10 @@ def run_poc(
         )
 
         # 保存結果
-        out = Path(out_path) if out_path else Path("e:/Jerry_python/wren_tool/out/poc_results.json")
+        if out_path:
+            out = Path(out_path)
+        else:
+            out = DEFAULT_OUTPUT_PATH
         out.parent.mkdir(parents=True, exist_ok=True)
 
         with open(out, "w", encoding="utf-8") as f:
@@ -529,10 +562,10 @@ if __name__ == '__main__':
     import argparse
 
     parser = argparse.ArgumentParser(description="增強版PoC回測工具")
-    parser.add_argument("--csv", required=False, default="e:/Jerry_python/wren_tool/data/sample_ohlc.csv",
-                       help="輸入CSV數據文件路徑")
-    parser.add_argument("--out", required=False, default="e:/Jerry_python/wren_tool/out/poc_results.json",
-                       help="輸出結果文件路徑")
+    parser.add_argument("--csv", required=False, default=str(DEFAULT_DATA_PATH) if PATHS_AVAILABLE else "e:/Jerry_python/wren_tool/data/sample_ohlc.csv",
+                       help=f"輸入CSV數據文件路徑 (預設: {'相對路徑' if PATHS_AVAILABLE else '硬編碼路徑'})")
+    parser.add_argument("--out", required=False, default=str(DEFAULT_OUTPUT_PATH) if PATHS_AVAILABLE else "e:/Jerry_python/wren_tool/out/poc_results.json",
+                       help=f"輸出結果文件路徑 (預設: {'相對路徑' if PATHS_AVAILABLE else '硬編碼路徑'})")
     parser.add_argument("--strategy", required=False, default="sma_crossover",
                        choices=["sma_crossover", "rsi", "statistical_arbitrage"],
                        help="交易策略")

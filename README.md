@@ -62,6 +62,9 @@ pip install -r requirements.txt
 
 ```powershell
 # 基本回測（使用默認參數）
+python scripts/poc_run.py
+
+# 或指定自定義數據文件
 python scripts/poc_run.py --csv data/sample_ohlc.csv
 
 # 自定義參數回測
