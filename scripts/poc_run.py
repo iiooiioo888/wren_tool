@@ -179,7 +179,7 @@ def simulate_trades_enhanced(
                         "qty": float(qty),
                         "fee": float(fee_amount),
                         "slippage": float(slippage_result.slippage_amount) if slippage_model else 0.0,
-                        "delay_cost": float(execution_price - current_price)
+                        "delay_cost": float((execution_price - current_price) * qty)
                     })
 
                     total_delay_cost += (execution_price - current_price) * qty
