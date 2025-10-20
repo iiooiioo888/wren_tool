@@ -156,7 +156,7 @@ class TestFullBacktestIntegration:
         empty_csv.write_text("timestamp,open,high,low,close,volume\n")
 
         result = run_poc(str(empty_csv), verbose=False)
-        assert result["total_value"] == 0
+        assert result["total_value"] == 10000.0  # 應該等於初始資金，因為沒有交易
         assert result["total_trades"] == 0
 
     def test_large_dataset_performance(self, tmp_path):
