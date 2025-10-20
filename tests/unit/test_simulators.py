@@ -58,10 +58,12 @@ class TestDelaySimulator:
         assert delay_result.routing_delay >= 0
         assert delay_result.matching_delay >= 0
 
-        # 檢查總延遲是各部分之和
-        expected_total = (delay_result.network_delay + delay_result.api_delay +
-                         delay_result.routing_delay + delay_result.matching_delay +
-                         delay_result.market_data_delay)
+        # 檢查總延遲是各部分之和（考慮時間和負載因子）
+        expected_total = (delay_result.breakdown['network_delay'] +
+                         delay_result.breakdown['api_delay'] +
+                         delay_result.breakdown['routing_delay'] +
+                         delay_result.breakdown['matching_delay'] +
+                         delay_result.breakdown['market_data_delay'])
         assert abs(delay_result.total_delay - expected_total) < 0.001
 
     def test_simulate_order_delay_with_different_types(self):

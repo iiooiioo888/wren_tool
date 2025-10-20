@@ -258,8 +258,15 @@ def simulate_trades_enhanced(
                 total_delay_cost += (current_price - execution_price) * position
 
     # 計算最終價值
-    last_price = df.iloc[-1]["close"]
-    final_position_value = position * last_price
+    if len(df) > 0:
+        last_price = df.iloc[-1]["close"]
+        final_position_value = position * last_price
+    else:
+        # 空數據：沒有最後價格，使用初始假設
+        last_price = 0.0
+        final_position_value = 0.0  # 沒有交易數據，倉位應為0
+        position = 0.0  # 確保倉位為0
+
     total_value = cash + final_position_value
     gross_pnl = total_value - initial_cash
     net_pnl = gross_pnl - total_fees - total_slippage - total_delay_cost
@@ -528,9 +535,6 @@ def run_poc(
         if verbose:
             logger.info(f"加載數據: {csv_path}")
         df = load_data(csv_path)
-
-        if len(df) == 0:
-            raise ValueError("數據文件為空")
 
         if verbose:
             logger.info(f"數據範圍: {df['timestamp'].min()} 到 {df['timestamp'].max()}")
